@@ -62,6 +62,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [usingTelegram, setUsingTelegram] = useState(false);
+  const [userId, setUserId] = useState(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -74,8 +75,41 @@ export default function CheckoutPage() {
     },
   });
 
-  // @ts-ignore
-  const userId = window.Telegram.WebApp.initDataUnsafe.user.id;
+  useEffect(() => {
+    if (
+      typeof window !== "undefined" &&
+      // @ts-ignore
+      window.Telegram &&
+      // @ts-ignore
+      window.Telegram.WebApp
+    ) {
+      setUsingTelegram(true);
+      // Endi window obyekti mavjud bo'lganligi sababli user id ni olamiz
+      // @ts-ignore
+      setUserId(window.Telegram.WebApp.initDataUnsafe.user.id);
+
+      // Agar kerak bo'lsa, Telegram main button ni sozlash
+      // @ts-ignore
+      window.Telegram.WebApp.MainButton.setText("Buyurtmani Yakunlash");
+      // @ts-ignore
+      window.Telegram.WebApp.MainButton.show();
+      const handleMainButtonClick = () => {
+        form.handleSubmit(onSubmit)();
+      };
+      // @ts-ignore
+      window.Telegram.WebApp.onEvent(
+        "mainButtonClicked",
+        handleMainButtonClick,
+      );
+      return () => {
+        // @ts-ignore
+        window.Telegram.WebApp.offEvent(
+          "mainButtonClicked",
+          handleMainButtonClick,
+        );
+      };
+    }
+  }, [form]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
@@ -99,7 +133,6 @@ export default function CheckoutPage() {
         },
       );
 
-      // Masalan, onSubmit funksiyasi ichida:
       if (response.status === 201) {
         const subtotal = items.reduce(
           (total, item) =>
@@ -107,11 +140,6 @@ export default function CheckoutPage() {
           0,
         );
 
-        // Xaridorning Telegram chat id-sini formdan yoki sessiondan olamiz.
-        // Masalan, form ma'lumotlariga 'telegram_chat_id' qo'shilgan bo'lsa:
-        // const buyerChatId = values.telegram_chat_id; // bu maydonni formga qo'shing yoki boshqa usul bilan oling
-
-        // Telegram xabarini dinamik tarzda shakllantiramiz:
         const telegramMessage = `
 🛒 Buyurtmangiz qabul qilindi!
 ------------------------------
@@ -145,7 +173,7 @@ Jami: UZS ${subtotal.toLocaleString()}
         );
       }
     } catch (error) {
-      console.error("Order yuborishda xatolik:", error);
+      console.error("Buyurtmani yuborishda xatolik:", error);
       alert(
         "Buyurtmani yuborishda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.",
       );
