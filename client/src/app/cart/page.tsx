@@ -20,13 +20,13 @@ export default function CartPage() {
     <div className="pb-16">
       <MobileNavbar />
       <div className="container mx-auto px-4 pt-4">
-        <h1 className="text-2xl font-bold mb-4">Shopping Cart</h1>
+        <h1 className="text-2xl font-bold mb-4">Savatcha</h1>
 
         {items.length === 0 ? (
           <div className="text-center py-8">
-            <p className="mb-4">Your cart is empty</p>
+            <p className="mb-4">Savatingiz bo'sh</p>
             <Button asChild>
-              <Link href="/">Continue Shopping</Link>
+              <Link href="/">Savdo qilishni davom ettirish</Link>
             </Button>
           </div>
         ) : (
@@ -60,7 +60,7 @@ export default function CartPage() {
                         }
                       >
                         <Minus className="h-3 w-3" />
-                        <span className="sr-only">Decrease quantity</span>
+                        <span className="sr-only">Miqdorni kamaytirish</span>
                       </Button>
                       <span className="text-sm w-4 text-center">
                         {item.quantity}
@@ -74,7 +74,7 @@ export default function CartPage() {
                         }
                       >
                         <Plus className="h-3 w-3" />
-                        <span className="sr-only">Increase quantity</span>
+                        <span className="sr-only">Miqdorni oshirish</span>
                       </Button>
                       <Button
                         variant="ghost"
@@ -83,7 +83,7 @@ export default function CartPage() {
                         onClick={() => removeItem(item.product.id)}
                       >
                         <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Remove item</span>
+                        <span className="sr-only">Elementni olib tashlash</span>
                       </Button>
                     </div>
                   </div>
@@ -93,21 +93,21 @@ export default function CartPage() {
 
             <div className="border-t pt-4 mb-6">
               <div className="flex justify-between mb-2">
-                <span>Subtotal</span>
+                <span>Yig'indi</span>
                 <span>UZS {subtotal.toLocaleString()}</span>
               </div>
               <div className="flex justify-between mb-4">
-                <span>Shipping</span>
-                <span>Calculated at checkout</span>
+                <span>Yetkazib berish</span>
+                <span>To'lov paytida hisoblanadi</span>
               </div>
               <div className="flex justify-between font-bold">
-                <span>Total</span>
+                <span>Jami</span>
                 <span>UZS {subtotal.toLocaleString()}</span>
               </div>
             </div>
 
             <Button className="w-full py-6 text-base" asChild>
-              <Link href="/checkout">Proceed to Checkout</Link>
+              <Link href="/checkout">To'lovga o'tish</Link>
             </Button>
           </>
         )}

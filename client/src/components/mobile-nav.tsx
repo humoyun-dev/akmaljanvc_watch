@@ -13,7 +13,7 @@ export default function MobileNavbar() {
     <div className="fixed bottom-0 left-0 right-0 border-t bg-background z-50">
       <div className="container mx-auto flex items-center justify-between py-2 px-2">
         <Link href="/" className="font-bold text-lg">
-          WatchShop
+          AkmaljanvcShop
         </Link>
 
         <div className="flex items-center gap-1">

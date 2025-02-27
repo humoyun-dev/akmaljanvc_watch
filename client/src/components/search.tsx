@@ -60,7 +60,7 @@ export default function SearchPage() {
   const [isFetching, setIsFetching] = useState(true);
   const [activeTab, setActiveTab] = useState<string>("all");
 
-  // Fetch initial data
+  // Dastlabki ma'lumotlarni olish
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
@@ -71,7 +71,7 @@ export default function SearchPage() {
         setCategories(categoriesRes.data);
         setBrands(brandsRes.data);
       } catch (error) {
-        console.error("Error fetching initial data:", error);
+        console.error("Dastlabki ma'lumotlarni olishda xatolik:", error);
       } finally {
         setIsFetching(false);
       }
@@ -79,7 +79,7 @@ export default function SearchPage() {
     fetchInitialData();
   }, []);
 
-  // Fetch products
+  // Mahsulotlarni olish
   useEffect(() => {
     const fetchProducts = async () => {
       setIsLoading(true);
@@ -97,7 +97,7 @@ export default function SearchPage() {
         );
         setProducts(data || []);
       } catch (error) {
-        console.error("Error fetching products:", error);
+        console.error("Mahsulotlarni olishda xatolik:", error);
       } finally {
         setIsLoading(false);
       }
@@ -115,7 +115,7 @@ export default function SearchPage() {
     isFetching,
   ]);
 
-  // Update URL
+  // URLni yangilash
   useEffect(() => {
     const params = new URLSearchParams(searchParams);
     if (search) params.set("q", search);
@@ -155,7 +155,7 @@ export default function SearchPage() {
     <div className="pb-16">
       <MobileNavbar />
       <div className="container px-4 pt-4">
-        {/* Search and Filter Header */}
+        {/* Qidirish va Filtrlash bo'limi */}
         <div className="sticky top-0 z-10 -mx-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 py-3 border-b">
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
@@ -216,7 +216,7 @@ export default function SearchPage() {
                   </TabsList>
                   <div className="mt-4 space-y-6">
                     <TabsContent value="all">
-                      {/* Sort */}
+                      {/* Saralash */}
                       <div className="space-y-2">
                         <h3 className="text-sm font-medium">Saralash</h3>
                         <Select value={sortBy} onValueChange={setSortBy}>
@@ -236,7 +236,7 @@ export default function SearchPage() {
                         </Select>
                       </div>
 
-                      {/* Price Range */}
+                      {/* Narx oralig'i */}
                       <div className="space-y-2 mt-6">
                         <h3 className="text-sm font-medium">Narx oralig'i</h3>
                         <Slider
@@ -329,7 +329,7 @@ export default function SearchPage() {
             </Sheet>
           </div>
 
-          {/* Active Filters */}
+          {/* Tanlangan filtrlar */}
           {activeFiltersCount > 0 && (
             <ScrollArea className="mt-2">
               <div className="flex gap-2">
@@ -382,7 +382,7 @@ export default function SearchPage() {
           )}
         </div>
 
-        {/* Results */}
+        {/* Natijalar */}
         <div className="mt-4">
           {isLoading ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">

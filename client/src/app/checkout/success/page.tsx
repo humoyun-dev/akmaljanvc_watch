@@ -13,7 +13,7 @@ import {
 import Link from "next/link";
 import MobileNavbar from "@/components/mobile-nav";
 import { Badge } from "@/components/ui/badge";
-import { use } from "react";
+import { Suspense } from "react";
 
 interface OrderItem {
   id: number;
@@ -70,42 +70,155 @@ function formatDate(dateString: string) {
   });
 }
 
-export default function OrderSuccessPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ order?: string; success?: string }>;
-}) {
-  const resolvedParams = use(searchParams);
-  const orderId = resolvedParams.order;
-  let order: Order | null = null;
+async function getOrder(orderId: string): Promise<Order> {
+  const res = await fetch(`${process.env.API}/orders/orders/${orderId}/`, {
+    cache: "no-store",
+  });
 
-  if (orderId) {
-    const orderPromise = fetch(`${process.env.API}/orders/orders/${orderId}/`, {
-      cache: "no-store",
-    }).then(async (res) => {
-      if (!res.ok) {
-        throw new Error("Failed to fetch order data");
-      }
-      return res.json();
-    });
-
-    try {
-      order = use(orderPromise);
-    } catch (error) {
-      console.error("Error fetching order:", error);
-    }
+  if (!res.ok) {
+    throw new Error("Failed to fetch order data");
   }
 
-  if (!order) {
+  return res.json();
+}
+
+function LoadingState() {
+  return (
+    <div className="pb-16">
+      <MobileNavbar />
+      <div className="container px-4 pt-4 flex flex-col items-center justify-center py-12 text-center">
+        <Loader2 className="h-16 w-16 text-muted-foreground animate-spin mb-4" />
+        <h1 className="text-2xl font-bold mb-2">Loading Order Details...</h1>
+        <p className="text-muted-foreground mb-6">
+          Please wait while we fetch your order information.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function OrderDetails({ order, success }: { order: Order; success?: string }) {
+  return (
+    <div className="container px-4 pt-4 space-y-6">
+      {Number(success) === 201 && (
+        <div className="text-center py-8">
+          <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold mb-2">Order Successful!</h1>
+          <p className="text-muted-foreground mb-4">
+            Thank you for your purchase. Your order has been received.
+          </p>
+          <Badge variant="outline" className="text-base px-4 py-1">
+            Order #{order.id}
+          </Badge>
+        </div>
+      )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <User className="h-5 w-5" />
+            Customer Details
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <div className="flex items-center gap-2">
+            <User className="h-4 w-4 text-muted-foreground" />
+            <span>
+              {order.first_name} {order.last_name}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Phone className="h-4 w-4 text-muted-foreground" />
+            <span>{order.phone_number}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-muted-foreground" />
+            <span>{order.shipping_address}</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5" />
+            Order Details
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Status</span>
+            <Badge variant="outline" className={getStatusColor(order.status)}>
+              {order.status.toUpperCase()}
+            </Badge>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Payment Method</span>
+            <div className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4" />
+              {formatPaymentMethod(order.payment_method)}
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Order Date</span>
+            <span>{formatDate(order.created_at)}</span>
+          </div>
+          <Separator />
+          <div className="space-y-2">
+            {order.order_items.map((item) => (
+              <div
+                key={item.id}
+                className="flex items-center justify-between text-sm"
+              >
+                <div className="flex items-center gap-2">
+                  <Package className="h-4 w-4 text-muted-foreground" />
+                  <span>Product #{item.product}</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="text-muted-foreground">
+                    {item.quantity} × UZS {Number(item.price).toLocaleString()}
+                  </span>
+                  <span className="font-medium">
+                    UZS {Number(item.total_price).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <Separator />
+          <div className="flex items-center justify-between font-bold">
+            <span>Total Amount</span>
+            <span>UZS {Number(order.total_price).toLocaleString()}</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="flex flex-col gap-4">
+        <Button asChild size="lg">
+          <Link href="/">Continue Shopping</Link>
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+export default async function OrderSuccessPage({
+  searchParams,
+}: {
+  searchParams: { order?: string; success?: string };
+}) {
+  if (!searchParams.order) {
     return (
       <div className="pb-16">
         <MobileNavbar />
-        <div className="container px-4 pt-4 flex flex-col items-center justify-center py-12 text-center">
-          <Loader2 className="h-16 w-16 text-muted-foreground animate-spin mb-4" />
-          <h1 className="text-2xl font-bold mb-2">Loading Order Details...</h1>
+        <div className="container px-4 pt-4 text-center py-12">
+          <h1 className="text-2xl font-bold mb-4">Order Not Found</h1>
           <p className="text-muted-foreground mb-6">
-            Please wait while we fetch your order information.
+            We couldn't find the order you're looking for.
           </p>
+          <Button asChild>
+            <Link href="/">Return to Home</Link>
+          </Button>
         </div>
       </div>
     );
@@ -114,107 +227,23 @@ export default function OrderSuccessPage({
   return (
     <div className="pb-16">
       <MobileNavbar />
-      <div className="container px-4 pt-4 space-y-6">
-        {Number(resolvedParams.success) === 201 && (
-          <div className="text-center py-8">
-            <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold mb-2">Order Successful!</h1>
-            <p className="text-muted-foreground mb-4">
-              Thank you for your purchase. Your order has been received.
-            </p>
-            <Badge variant="outline" className="text-base px-4 py-1">
-              Order #{order.id}
-            </Badge>
-          </div>
-        )}
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Customer Details
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4">
-            <div className="flex items-center gap-2">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <span>
-                {order.first_name} {order.last_name}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Phone className="h-4 w-4 text-muted-foreground" />
-              <span>{order.phone_number}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-              <span>{order.shipping_address}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Order Details
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4">
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Status</span>
-              <Badge variant="outline" className={getStatusColor(order.status)}>
-                {order.status.toUpperCase()}
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Payment Method</span>
-              <div className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4" />
-                {formatPaymentMethod(order.payment_method)}
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Order Date</span>
-              <span>{formatDate(order.created_at)}</span>
-            </div>
-            <Separator />
-            <div className="space-y-2">
-              {order.order_items.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between text-sm"
-                >
-                  <div className="flex items-center gap-2">
-                    <Package className="h-4 w-4 text-muted-foreground" />
-                    <span>Product #{item.product}</span>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className="text-muted-foreground">
-                      {item.quantity} × UZS{" "}
-                      {Number(item.price).toLocaleString()}
-                    </span>
-                    <span className="font-medium">
-                      UZS {Number(item.total_price).toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <Separator />
-            <div className="flex items-center justify-between font-bold">
-              <span>Total Amount</span>
-              <span>UZS {Number(order.total_price).toLocaleString()}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="flex flex-col gap-4">
-          <Button asChild size="lg">
-            <Link href="/">Continue Shopping</Link>
-          </Button>
-        </div>
-      </div>
+      <Suspense fallback={<LoadingState />}>
+        <OrderContent
+          orderId={searchParams.order}
+          success={searchParams.success}
+        />
+      </Suspense>
     </div>
   );
+}
+
+async function OrderContent({
+  orderId,
+  success,
+}: {
+  orderId: string;
+  success?: string;
+}) {
+  const order = await getOrder(orderId);
+  return <OrderDetails order={order} success={success} />;
 }

@@ -21,7 +21,7 @@ export default function AddToCartButton({ product }: AddToCartButtonProps) {
       className="w-full py-6 text-base"
       disabled={!product.is_in_stock}
     >
-      {product.is_in_stock ? "Add to Cart" : "Out of Stock"}
+      {product.is_in_stock ? "Savatchaga qo'shish" : "Mavjud emas"}
     </Button>
   );
 }

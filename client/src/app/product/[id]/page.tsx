@@ -16,7 +16,7 @@ interface ProductPageProps {
 }
 
 export default function ProductPage({ params }: ProductPageProps) {
-  // Unwrap params using React.use()
+  // React.use() yordamida params ni ochish
   const resolvedParams = use(params);
   const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -42,9 +42,11 @@ export default function ProductPage({ params }: ProductPageProps) {
         }
       } catch (err) {
         if (axios.isAxiosError(err)) {
-          setError(err.response?.data?.message || "Failed to load product");
+          setError(
+            err.response?.data?.message || "Mahsulotni yuklashda xatolik",
+          );
         } else {
-          setError("An unexpected error occurred");
+          setError("Kutilmagan xatolik yuz berdi");
         }
       } finally {
         setIsLoading(false);
@@ -54,7 +56,7 @@ export default function ProductPage({ params }: ProductPageProps) {
     fetchProduct();
 
     return () => controller.abort();
-  }, [resolvedParams.id]); // Updated dependency to use resolvedParams
+  }, [resolvedParams.id]); // resolvedParams dan foydalanish uchun dependency yangilandi
 
   return (
     <div className="pb-16">
@@ -122,7 +124,7 @@ function ProductDetails({ product }: { product: Product }) {
           UZS {Number(product.price).toLocaleString()}
         </div>
         <Badge variant={product.is_in_stock ? "default" : "secondary"}>
-          {product.is_in_stock ? "In stock" : "Out of stock"}
+          {product.is_in_stock ? "Mavjud" : "Mavjud emas"}
         </Badge>
       </div>
 
@@ -131,14 +133,14 @@ function ProductDetails({ product }: { product: Product }) {
       <div className="grid grid-cols-2 gap-4 mb-6">
         <ProductSpecification label="Material" value={product.material} />
         <ProductSpecification
-          label="Water Resistance"
+          label="Suvga chidamlilik"
           value={`${product.water_resistance}m`}
         />
         <ProductSpecification
-          label="Dial Size"
+          label="Yuzaning o'lchami"
           value={`${product.dial_size}mm`}
         />
-        <ProductSpecification label="Weight" value={`${product.weight}g`} />
+        <ProductSpecification label="Og'irligi" value={`${product.weight}g`} />
       </div>
 
       <AddToCartButton product={product} />

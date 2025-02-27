@@ -29,10 +29,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <CartProvider>{children}</CartProvider>
-        <script
-          src="https://telegram.org/js/telegram-web-app.js?56"
-          async={true}
-        ></script>
+        {/*<script*/}
+        {/*  src="https://telegram.org/js/telegram-web-app.js?56"*/}
+        {/*  async={true}*/}
+        {/*></script>*/}
       </body>
     </html>
   );

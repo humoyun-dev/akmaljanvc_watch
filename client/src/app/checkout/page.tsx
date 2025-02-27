@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,6 +35,7 @@ import { useCart } from "@/providers/cart.provider";
 import MobileNavbar from "@/components/mobile-nav";
 import { Loader2, ShoppingBag } from "lucide-react";
 import PhoneNumber from "@/components/phone-number";
+import { getUserData } from "@/lib/storage";
 
 const formSchema = z.object({
   first_name: z
@@ -62,7 +63,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [usingTelegram, setUsingTelegram] = useState(false);
-  const [userId, setUserId] = useState(null);
+  const [chatId, setChatId] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -76,44 +77,15 @@ export default function CheckoutPage() {
   });
 
   useEffect(() => {
-    if (
-      typeof window !== "undefined" &&
-      // @ts-ignore
-      window.Telegram &&
-      // @ts-ignore
-      window.Telegram.WebApp
-    ) {
-      setUsingTelegram(true);
-      // Endi window obyekti mavjud bo'lganligi sababli user id ni olamiz
-      // @ts-ignore
-      setUserId(window.Telegram.WebApp.initDataUnsafe.user.id);
-
-      // Agar kerak bo'lsa, Telegram main button ni sozlash
-      // @ts-ignore
-      window.Telegram.WebApp.MainButton.setText("Buyurtmani Yakunlash");
-      // @ts-ignore
-      window.Telegram.WebApp.MainButton.show();
-      const handleMainButtonClick = () => {
-        form.handleSubmit(onSubmit)();
-      };
-      // @ts-ignore
-      window.Telegram.WebApp.onEvent(
-        "mainButtonClicked",
-        handleMainButtonClick,
-      );
-      return () => {
-        // @ts-ignore
-        window.Telegram.WebApp.offEvent(
-          "mainButtonClicked",
-          handleMainButtonClick,
-        );
-      };
+    const userData = getUserData();
+    if (userData) {
+      form.setValue("phone_number", userData.phone);
+      setChatId(userData.chatId);
     }
-  }, [form]);
+  }, [form, chatId]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
-    console.log(values);
 
     const orderData = {
       ...values,
@@ -136,7 +108,7 @@ export default function CheckoutPage() {
       if (response.status === 201) {
         const subtotal = items.reduce(
           (total, item) =>
-            total + parseFloat(item.product.price) * item.quantity,
+            total + Number.parseFloat(item.product.price) * item.quantity,
           0,
         );
 
@@ -153,7 +125,7 @@ ${items
   .map(
     (item) =>
       `- ${item.product.name} × ${item.quantity} = UZS ${Number(
-        (parseFloat(item.product.price) * item.quantity).toFixed(2),
+        (Number.parseFloat(item.product.price) * item.quantity).toFixed(2),
       ).toLocaleString()}`,
   )
   .join("\n")}
@@ -161,11 +133,12 @@ ${items
 Jami: UZS ${subtotal.toLocaleString()}
 `;
 
-        // Xaridorga yuborish: API route ga chat_id ham yuboramiz
-        await axios.post("/api/sendTelegramMessage", {
-          message: telegramMessage,
-          chat_id: userId,
-        });
+        if (chatId) {
+          await axios.post("/api/telegram", {
+            message: telegramMessage,
+            chat_id: chatId,
+          });
+        }
 
         clearCart();
         router.push(
@@ -200,7 +173,8 @@ Jami: UZS ${subtotal.toLocaleString()}
   }
 
   const subtotal = items.reduce(
-    (total, item) => total + parseFloat(item.product.price) * item.quantity,
+    (total, item) =>
+      total + Number.parseFloat(item.product.price) * item.quantity,
     0,
   );
 
@@ -232,7 +206,7 @@ Jami: UZS ${subtotal.toLocaleString()}
                       UZS{" "}
                       {Number(
                         (
-                          parseFloat(item.product.price) * item.quantity
+                          Number.parseFloat(item.product.price) * item.quantity
                         ).toFixed(2),
                       ).toLocaleString()}
                     </span>
@@ -244,6 +218,7 @@ Jami: UZS ${subtotal.toLocaleString()}
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* Form fields remain the same */}
               <Card>
                 <CardHeader>
                   <CardTitle>Kontakt ma'lumotlari</CardTitle>
@@ -355,7 +330,6 @@ Jami: UZS ${subtotal.toLocaleString()}
                 </CardContent>
               </Card>
 
-              {/* Only render the regular submit button if not inside Telegram */}
               {!usingTelegram && (
                 <Button
                   type="submit"
